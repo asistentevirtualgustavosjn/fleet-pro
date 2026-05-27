@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Fleet Pro — Conductor</title>
+<link rel="manifest" href="/manifest-conductor.json">
+<meta name="theme-color" content="#00e5a0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FP Conductor">
+<link rel="apple-touch-icon" href="/icon-conductor-192.png">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{--bg:#0d0f12;--surface:#151820;--border:#1e2230;--accent:#00e5a0;--danger:#ff4d4d;--text:#e8eaf0;--muted:#5a6070;--card:#1a1e2a;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:24px 20px;width:100%;max-width:340px;text-align:center;}
+.top{margin-bottom:18px;}
+.truck-icon{font-size:40px;line-height:1;margin-bottom:6px;}
+h1{font-size:20px;font-weight:700;margin-bottom:3px;}
+.sub{font-size:12px;color:var(--muted);}
+.field{margin-bottom:12px;text-align:left;}
+.field label{font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:5px;}
+.field select{width:100%;padding:11px 13px;background:var(--card);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .2s;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235a6070' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 13px center;padding-right:34px;}
+.field select:focus{border-color:var(--accent);}
+.field select:disabled{opacity:.45;}
+.gps-ring{width:88px;height:88px;border-radius:50%;margin:18px auto 14px;display:flex;align-items:center;justify-content:center;background:var(--card);border:2px solid var(--border);transition:all .4s;}
+.gps-ring.activo{background:#022c22;border-color:var(--accent);animation:ringpulse 2s infinite;}
+.gps-ring.error{background:#1a0505;border-color:var(--danger);}
+@keyframes ringpulse{0%{box-shadow:0 0 0 0 rgba(0,229,160,.4)}70%{box-shadow:0 0 0 18px rgba(0,229,160,0)}100%{box-shadow:0 0 0 0 rgba(0,229,160,0)}}
+.gps-emoji{font-size:34px;}
+.status-text{font-size:16px;font-weight:700;margin-bottom:4px;}
+.status-detail{font-size:12px;color:var(--muted);margin-bottom:16px;min-height:18px;line-height:1.4;}
+.coords{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 13px;margin-bottom:16px;text-align:left;}
+.coord-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;font-size:12px;}
+.coord-label{color:var(--muted);}
+.coord-val{font-family:'DM Mono',monospace;font-weight:500;color:var(--text);}
+.btn{width:100%;padding:14px;border-radius:12px;border:none;font-size:16px;font-weight:700;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .2s;}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+.btn-start{background:var(--accent);color:#000;}
+.btn-start:not(:disabled):active{opacity:.85;transform:scale(.98);}
+.btn-stop{background:var(--danger);color:#fff;}
+.btn-stop:active{opacity:.85;transform:scale(.98);}
+.contador{font-size:11px;color:var(--muted);margin-top:10px;font-family:'DM Mono',monospace;min-height:16px;}
+.note{font-size:11px;color:var(--muted);margin-top:14px;line-height:1.6;background:var(--card);border-radius:8px;padding:10px 12px;text-align:left;}
+.note strong{color:var(--text);}
+.install-bar{background:rgba(0,229,160,.1);border:1px solid rgba(0,229,160,.25);border-radius:10px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:var(--accent);display:none;cursor:pointer;text-align:left;}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="top">
+    <div class="truck-icon">🚛</div>
+    <h1>Fleet Pro</h1>
+    <div class="sub">Panel del conductor</div>
+  </div>
+
+  <div class="install-bar" id="install-bar" onclick="instalarApp()">
+    📲 <strong>Instalar app</strong> — Toca aquí para agregar a tu pantalla de inicio
+  </div>
+
+  <div class="field">
+    <label>Tu empresa</label>
+    <select id="sel-emp"><option value="">Cargando…</option></select>
+  </div>
+  <div class="field">
+    <label>Tu vehículo</label>
+    <select id="sel-veh" disabled><option value="">Selecciona tu empresa primero</option></select>
+  </div>
+
+  <div class="gps-ring" id="anillo"><span class="gps-emoji" id="emoji">📍</span></div>
+  <div class="status-text" id="stxt">Listo para iniciar</div>
+  <div class="status-detail" id="sdet">Selecciona empresa y vehículo</div>
+
+  <div class="coords">
+    <div class="coord-row"><span class="coord-label">Latitud</span><span class="coord-val" id="lat">--</span></div>
+    <div class="coord-row"><span class="coord-label">Longitud</span><span class="coord-val" id="lng">--</span></div>
+    <div class="coord-row"><span class="coord-label">Velocidad</span><span class="coord-val" id="spd">-- km/h</span></div>
+    <div class="coord-row"><span class="coord-label">Último envío</span><span class="coord-val" id="hora">--</span></div>
+  </div>
+
+  <button class="btn btn-start" id="btnAcc" onclick="toggleGPS()" disabled>Iniciar seguimiento</button>
+  <div class="contador" id="contador"></div>
+
+  <div class="note">
+    <strong>⚠ Importante:</strong><br>
+    Mantén esta pantalla visible · No cierres el navegador · GPS activado · Pantalla sin bloqueo automático
+  </div>
+</div>
+
+<script>
+let activo=false, intervalo=null, enviados=0, keepaliveInterval=null;
+const SERVER=window.location.origin;
+let allVehiculos=[], deferredPrompt=null;
+
+// PWA
+window.addEventListener('beforeinstallprompt', e=>{
+  e.preventDefault(); deferredPrompt=e;
+  document.getElementById('install-bar').style.display='block';
+});
+function instalarApp(){
+  if(!deferredPrompt)return;
+  deferredPrompt.prompt();
+  deferredPrompt.userChoice.then(()=>{ deferredPrompt=null; document.getElementById('install-bar').style.display='none'; });
+}
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('/sw.js').catch(()=>{});
+}
+
+async function cargarDatos(){
+  try {
+    const[er,vr]=await Promise.all([fetch(`${SERVER}/api/empresas`),fetch(`${SERVER}/api/vehicles`)]);
+    const empresas=await er.json(); allVehiculos=await vr.json();
+    const sel=document.getElementById('sel-emp');
+    sel.innerHTML='<option value="">— Selecciona tu empresa —</option>';
+    empresas.filter(e=>e.activo).forEach(e=>{
+      const o=document.createElement('option');o.value=e.cedula;o.textContent=e.nombre;
+      o.dataset.vehs=JSON.stringify(e.vehiculos);sel.appendChild(o);
+    });
+    sel.addEventListener('change',onEmpresaChange);
+    document.getElementById('sel-veh').addEventListener('change',onVehChange);
+  } catch { document.getElementById('sel-emp').innerHTML='<option>Error al cargar</option>'; }
+}
+
+function onEmpresaChange(){
+  const sel=document.getElementById('sel-emp');
+  const selV=document.getElementById('sel-veh');
+  selV.innerHTML='<option value="">— Selecciona tu vehículo —</option>';
+  document.getElementById('btnAcc').disabled=true;
+  if(!sel.value){selV.disabled=true;return;}
+  const ids=JSON.parse(sel.options[sel.selectedIndex].dataset.vehs||'[]');
+  allVehiculos.filter(v=>ids.includes(v.id)).forEach(v=>{
+    const o=document.createElement('option');o.value=v.id;o.textContent=v.nombre;selV.appendChild(o);
+  });
+  selV.disabled=false;
+}
+
+function onVehChange(){
+  const val=document.getElementById('sel-veh').value;
+  document.getElementById('btnAcc').disabled=!val;
+  if(val)document.getElementById('sdet').textContent='Presiona el botón para comenzar';
+}
+
+cargarDatos();
+
+function toggleGPS(){if(!activo)iniciar();else detener();}
+
+function iniciar(){
+  const vid=document.getElementById('sel-veh').value;
+  if(!vid)return;
+  if(!navigator.geolocation){setError('GPS no disponible');return;}
+  activo=true;enviados=0;
+  document.getElementById('btnAcc').textContent='Detener seguimiento';
+  document.getElementById('btnAcc').className='btn btn-stop';
+  document.getElementById('stxt').textContent='Buscando señal GPS…';
+  document.getElementById('sdet').textContent='Puede tardar unos segundos';
+  document.getElementById('anillo').className='gps-ring';
+  document.getElementById('emoji').textContent='🔍';
+  document.getElementById('sel-emp').disabled=true;
+  document.getElementById('sel-veh').disabled=true;
+
+  // Keepalive para mantener SW activo (GPS en segundo plano)
+  if('serviceWorker' in navigator && navigator.serviceWorker.controller){
+    keepaliveInterval=setInterval(()=>{
+      navigator.serviceWorker.controller.postMessage('keepalive');
+    }, 20000);
+  }
+
+  // Solicitar wakelock para evitar que se apague la pantalla
+  if('wakeLock' in navigator){
+    navigator.wakeLock.request('screen').catch(()=>{});
+  }
+
+  enviar();
+  intervalo=setInterval(enviar, 5000);
+}
+
+function detener(){
+  activo=false;clearInterval(intervalo);clearInterval(keepaliveInterval);
+  intervalo=null;keepaliveInterval=null;
+  document.getElementById('btnAcc').textContent='Iniciar seguimiento';
+  document.getElementById('btnAcc').className='btn btn-start';
+  document.getElementById('stxt').textContent='Seguimiento detenido';
+  document.getElementById('sdet').textContent='Presiona el botón para comenzar';
+  document.getElementById('anillo').className='gps-ring';
+  document.getElementById('emoji').textContent='📍';
+  document.getElementById('sel-emp').disabled=false;
+  document.getElementById('sel-veh').disabled=false;
+  document.getElementById('contador').textContent='';
+}
+
+function enviar(){
+  const vehicleId=document.getElementById('sel-veh').value;
+  navigator.geolocation.getCurrentPosition(
+    pos=>{
+      const lat=pos.coords.latitude, lng=pos.coords.longitude;
+      const speed=pos.coords.speed?Math.round(pos.coords.speed*3.6):0;
+      document.getElementById('lat').textContent=lat.toFixed(6);
+      document.getElementById('lng').textContent=lng.toFixed(6);
+      document.getElementById('spd').textContent=speed+' km/h';
+      document.getElementById('hora').textContent=new Date().toLocaleTimeString('es-PY');
+      fetch(`${SERVER}/gps`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({vehicleId,lat,lng,speed})})
+      .then(r=>r.json())
+      .then(()=>{
+        enviados++;
+        document.getElementById('anillo').className='gps-ring activo';
+        document.getElementById('emoji').textContent='✅';
+        document.getElementById('stxt').textContent='Transmitiendo en vivo';
+        document.getElementById('sdet').textContent='Actualizando cada 5 segundos';
+        document.getElementById('contador').textContent=`${enviados} actualizaciones enviadas`;
+      })
+      .catch(()=>setError('Sin conexión al servidor'));
+    },
+    err=>{
+      const msgs={1:'Permite el acceso a la ubicación',2:'GPS no disponible, sal a un área abierta',3:'GPS tardó mucho, reintentando…'};
+      setError(msgs[err.code]||'Error de GPS');
+    },
+    {enableHighAccuracy:true,timeout:12000,maximumAge:0}
+  );
+}
+
+function setError(msg){
+  document.getElementById('anillo').className='gps-ring error';
+  document.getElementById('emoji').textContent='⚠️';
+  document.getElementById('stxt').textContent='Error';
+  document.getElementById('sdet').textContent=msg;
+}
+</script>
+</body>
+</html>
